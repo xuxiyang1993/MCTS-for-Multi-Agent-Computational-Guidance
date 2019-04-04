@@ -8,7 +8,7 @@ from nodes_multi import MultiAircraftNode, MultiAircraftState
 from search_multi import MCTS
 
 
-def run_experiment(env, no_episodes, no_simulations, search_depth, save_path):
+def run_experiment(env, save_path):
     text_file = open(save_path, "w") # save all non-terminal print statements in a txt file
     episode = 0
     epi_returns = []
@@ -16,7 +16,7 @@ def run_experiment(env, no_episodes, no_simulations, search_depth, save_path):
     num_aircraft = Config.num_aircraft
     time_dict = {}
 
-    while episode < no_episodes:
+    while episode < Config.no_episodes:
         # at the beginning of each episode, set done to False, set time step in this episode to 0
         # set reward to 0, reset the environment
         episode += 1
@@ -28,8 +28,6 @@ def run_experiment(env, no_episodes, no_simulations, search_depth, save_path):
         info = None
         near_end = False
         counter = 0 # avoid end episode initially
-        env.render()
-        time.sleep(10)
 
         while not done:
             env.render()
@@ -45,7 +43,7 @@ def run_experiment(env, no_episodes, no_simulations, search_depth, save_path):
                     root = MultiAircraftNode(state=state)
                     mcts = MCTS(root)
                     if info[index] < 3 * Config.minimum_separation:
-                        best_node = mcts.best_action(no_simulations, search_depth)
+                        best_node = mcts.best_action(Config.no_simulations, Config.search_depth)
                     else:
                         best_node = mcts.best_action(Config.no_simulations_lite, Config.search_depth_lite)
                     action[index] = best_node.state.prev_action[index]
@@ -110,15 +108,12 @@ def run_experiment(env, no_episodes, no_simulations, search_depth, save_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--no_episodes', '-e', type=int, default=10)
-    parser.add_argument('--no_simulations', '-s', type=int, default=100)
-    parser.add_argument('--search_depth', '-d', type=int, default=3)
     parser.add_argument('--seed', '-r', type=int, default=2)
-    parser.add_argument('--save_path', '-p', type=str, default='output/seed2.txt')
+    parser.add_argument('--save_path', '-p', type=str, default='output/result.txt')
     args = parser.parse_args()
 
     env = MultiAircraftEnv(args.seed)
-    run_experiment(env, args.no_episodes, args.no_simulations, args.search_depth, args.save_path)
+    run_experiment(env, args.save_path)
 
 
 if __name__ == '__main__':
