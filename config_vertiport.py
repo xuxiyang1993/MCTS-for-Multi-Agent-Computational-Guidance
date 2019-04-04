@@ -13,7 +13,7 @@ def pointy_hex_corner(center, size, i):
 
 class Config:
     # experiment setting
-    no_episodes = 100
+    no_episodes = 5
 
     # airspace setting
     window_width = 800
