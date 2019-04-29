@@ -14,7 +14,11 @@ A short video demo of this algorithm: https://www.youtube.com/watch?v=Q6AkCCt-9n
 
 ## Getting Started
 
-Make sure that you have the above requirements taken care of, then download all the files.
+Make sure that you have the above requirements taken care of, then download all the files. You can run it using
+
+```
+python Agent_vertiport.py
+```
 
 
 If you have any questions or comments, don't hesitate to send me an email! I am looking for ways to make this code even more computationally efficient.
