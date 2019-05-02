@@ -130,6 +130,34 @@ class MultiAircraftEnv(gym.Env):
 
         return np.reshape(s, (-1, 8)), id
 
+    def _get_normalized_ob(self):
+        # state contains pos, vel for all intruder aircraft
+        # pos, vel, speed, heading for ownship
+        # goal pos
+        def normalize_velocity(velocity):
+            translation = velocity + self.max_speed
+            return translation / (self.max_speed * 2)
+
+        s = []
+        id = []
+        # loop all the aircraft
+        # return the information of each aircraft and their respective id
+        # s is in shape [number_aircraft, 8], id is list of length number_aircraft
+        for key, aircraft in self.aircraft_dict.ac_dict.items():
+            # (x, y, vx, vy, speed, heading, gx, gy)
+            s.append(aircraft.position[0] / Config.window_width)
+            s.append(aircraft.position[1] / Config.window_height)
+            s.append(normalize_velocity(aircraft.velocity[0]))
+            s.append(normalize_velocity(aircraft.velocity[1]))
+            s.append((aircraft.speed - Config.min_speed) / (Config.max_speed - Config.min_speed))
+            s.append(aircraft.heading / (2 * math.pi))
+            s.append(aircraft.goal.position[0] / Config.window_width)
+            s.append(aircraft.goal.position[1] / Config.window_height)
+
+            id.append(key)
+
+        return np.reshape(s, (-1, 8)), id
+
     def step(self, a, near_end=False):
         # a is a dictionary: {id: action, id: action, ...}
         # since MCTS is used every 5 seconds, there may be new aircraft generated during the 5 time step interval, which
