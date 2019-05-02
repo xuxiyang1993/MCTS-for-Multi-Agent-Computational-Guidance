@@ -14,32 +14,33 @@ __author__ = "Xuxi Yang <xuxiyang@iastate.edu>"
 class MultiAircraftEnv(gym.Env):
     """
     This is the airspace simulator where we can control multiple aircraft to their respective
-    goal position while avoiding conflicts between each other.
+    goal position while avoiding conflicts between each other. The aircraft will takeoff from
+    different vertiports, and select a random vertiport as its destination.
     **STATE:**
     The state consists all the information needed for the aircraft to choose an optimal action:
-    position, velocity, speed, heading, goal position, of each aircraft.
-    In the beginning of each episode, all the aircraft and their goals are initialized randomly.
+    position, velocity, speed, heading, goal position, of each aircraft:
+    (x, y, v_x, v_y, speed, \psi, goal_x, goal_y) for each aircraft.
     **ACTIONS:**
     The action is either applying +1, 0 or -1 for the change of heading angle of each aircraft.
+    More specifically, the action is a dictionary in form {id: action, id: action, ...}
     """
 
-    def __init__(self, sd):
-        self.load_config()
-        self.load_vertiport()
+    def __init__(self, sd=2):
+        self.load_config()  # load parameters for the simulator
+        self.load_vertiport()  # load config for the vertiports
         self.state = None
         self.viewer = None
 
         # build observation space and action space
-        self.observation_space = self.build_observation_space()
+        self.observation_space = self.build_observation_space()  # observation space deprecated, not in use for MCTS
         self.position_range = spaces.Box(
             low=np.array([0, 0]),
             high=np.array([self.window_width, self.window_height]),
-            dtype=np.float32)
+            dtype=np.float32)  # position range is the length and width of airspace
         self.action_space = spaces.Tuple((spaces.Discrete(3),) * self.num_aircraft)
+        # action space deprecated, since number of aircraft is changing from time to time
 
         self.conflicts = 0
-        self.conflict_flag = None
-        self.distance_mat = None
         self.seed(sd)
 
     def seed(self, seed=None):
@@ -50,16 +51,15 @@ class MultiAircraftEnv(gym.Env):
     def load_config(self):
         # input dim
         self.window_width = Config.window_width
-        self.window_height = Config.window_height
+        self.window_height = Config.window_height  # dimension of the airspace
         self.num_aircraft = Config.num_aircraft
         self.EPISODES = Config.EPISODES
-        self.G = Config.G
-        self.tick = Config.tick
-        self.scale = Config.scale
+        # self.tick = Config.tick
+        self.scale = Config.scale  # 1 meter = ? pixels, set to 60 here
         self.minimum_separation = Config.minimum_separation
         self.NMAC_dist = Config.NMAC_dist
-        self.horizon_dist = Config.horizon_dist
-        self.initial_min_dist = Config.initial_min_dist
+        # self.horizon_dist = Config.horizon_dist
+        self.initial_min_dist = Config.initial_min_dist  # when aircraft generated, is shouldn't be too close to others
         self.goal_radius = Config.goal_radius
         self.init_speed = Config.init_speed
         self.min_speed = Config.min_speed
@@ -67,20 +67,23 @@ class MultiAircraftEnv(gym.Env):
 
     def load_vertiport(self):
         self.vertiport_list = []
+        # read the vertiport location from config file
         for i in range(Config.vertiport_loc.shape[0]):
             self.vertiport_list.append(VertiPort(id=i, position=Config.vertiport_loc[i]))
 
     def reset(self):
-        # aircraft is stored in this list
+        # aircraft is stored in this dict
         self.aircraft_dict = AircraftDict()
-        self.id_tracker = 0
+        self.id_tracker = 0  # assign id to newly generated aircraft, increase by one after generating aircraft.
 
+        # keep track of number of conflicts, goals, and NMACs.
         self.conflicts = 0
         self.goals = 0
         self.NMACs = 0
 
         return self._get_ob()
 
+    # deprecated
     def pressure_reset(self):
         self.conflicts = 0
         # aircraft is stored in this list
@@ -109,6 +112,9 @@ class MultiAircraftEnv(gym.Env):
     def _get_ob(self):
         s = []
         id = []
+        # loop all the aircraft
+        # return the information of each aircraft and their respective id
+        # s is in shape [number_aircraft, 8], id is list of length number_aircraft
         for key, aircraft in self.aircraft_dict.ac_dict.items():
             # (x, y, vx, vy, speed, heading, gx, gy)
             s.append(aircraft.position[0])
@@ -125,7 +131,9 @@ class MultiAircraftEnv(gym.Env):
         return np.reshape(s, (-1, 8)), id
 
     def step(self, a, near_end=False):
-        # a is a dictionary: {id, action, ...}
+        # a is a dictionary: {id: action, id: action, ...}
+        # since MCTS is used every 5 seconds, there may be new aircraft generated during the 5 time step interval, which
+        # MCTS algorithm doesn't generate an action for it. In this case we let it fly straight.
         for id, aircraft in self.aircraft_dict.ac_dict.items():
             try:
                 aircraft.step(a[id])
@@ -133,9 +141,11 @@ class MultiAircraftEnv(gym.Env):
                 aircraft.step()
 
         for vertiport in self.vertiport_list:
-            vertiport.step()
+            vertiport.step()  # increase the clock of vertiport by 1
+            # generate new aircraft if the clock pass the interval
             if vertiport.clock_counter >= vertiport.time_next_aircraft and not near_end:
                 goal_vertiport_id = random.choice([e for e in range(len(self.vertiport_list)) if not e == vertiport.id])
+                # generate new aircraft and prepare to add it the dict
                 aircraft = Aircraft(
                     id=self.id_tracker,
                     position=vertiport.position,
@@ -143,14 +153,17 @@ class MultiAircraftEnv(gym.Env):
                     heading=self.random_heading(),
                     goal_pos=self.vertiport_list[goal_vertiport_id].position
                 )
+                # calc its dist to all the other aircraft
                 dist_array, id_array = self.dist_to_all_aircraft(aircraft)
                 min_dist = min(dist_array) if dist_array.shape[0] > 0 else 9999
+                # add it to dict only if it's far from others
                 if min_dist > 3 * self.minimum_separation:  # and self.aircraft_dict.num_aircraft < 10:
                     self.aircraft_dict.add(aircraft)
-                    self.id_tracker += 1
+                    self.id_tracker += 1  # increase id_tracker
 
-                    vertiport.generate_interval()
+                    vertiport.generate_interval()  # reset clock for this vertiport and generate a new time interval
 
+        # return the reward, done, and info
         reward, terminal, info = self._terminal_reward()
 
         return self._get_ob(), reward, terminal, info
@@ -159,14 +172,13 @@ class MultiAircraftEnv(gym.Env):
         """
         determine the reward and terminal for the current transition, and use info. Main idea:
         1. for each aircraft:
-          a. if there is no_conflict, return a large penalty and terminate
-          b. elif it is out of map, assign its reward as self.out_of_map_penalty, prepare to remove it
-          c. elif if it reaches goal, assign its reward as simulator, prepare to remove it
-          d. else assign its reward as simulator
-        2. accumulates the reward for all aircraft
+          a. if there a conflict, return a penalty for it
+          b. if there is NMAC, assign a penalty to it and prepare to remove this aircraft from dict
+          b. elif it is out of map, assign its reward as Config.wall_penalty, prepare to remove it
+          c. elif if it reaches goal, assign its reward to Config.goal_reward, prepare to remove it
+          d. else assign its reward as Config.step_penalty.
         3. remove out-of-map aircraft and goal-aircraft
-        4. if all aircraft are removed, return reward and terminate
-           else return the corresponding reward and not terminate
+
         """
         reward = 0
         # info = {'n': [], 'c': [], 'w': [], 'g': []}
@@ -230,6 +242,7 @@ class MultiAircraftEnv(gym.Env):
             self.aircraft_dict.remove(aircraft)
         # reward = [e.reward for e in self.aircraft_dict]
 
+        # info_dist_list is the min_dist to other aircraft for each aircraft.
         return reward, False, info_dist_list
 
     def render(self, mode='human'):
@@ -245,6 +258,7 @@ class MultiAircraftEnv(gym.Env):
         import os
         __location__ = os.path.realpath(os.path.join(os.getcwd(), os.path.dirname(__file__)))
 
+        # draw all the aircraft
         for id, aircraft in self.aircraft_dict.ac_dict.items():
             aircraft_img = rendering.Image(os.path.join(__location__, 'images/aircraft.png'), 32, 32)
             jtransform = rendering.Transform(rotation=aircraft.heading - math.pi / 2, translation=aircraft.position)
@@ -259,6 +273,7 @@ class MultiAircraftEnv(gym.Env):
             goal_img.set_color(r, g, b)
             self.viewer.onetime_geoms.append(goal_img)
 
+        # draw all the vertiports
         for veriport in self.vertiport_list:
             vertiport_img = rendering.Image(os.path.join(__location__, 'images/verti.png'), 32, 32)
             jtransform = rendering.Transform(rotation=0, translation=veriport.position)
@@ -272,6 +287,7 @@ class MultiAircraftEnv(gym.Env):
             self.viewer.close()
             self.viewer = None
 
+    # dist to all the aircraft
     def dist_to_all_aircraft(self, aircraft):
         id_list = []
         dist_list = []
@@ -325,57 +341,62 @@ class AircraftDict:
     def __init__(self):
         self.ac_dict = OrderedDict()
 
+    # how many aircraft currently en route
     @property
     def num_aircraft(self):
         return len(self.ac_dict)
 
+    # add aircraft to dict
     def add(self, aircraft):
+        # id should always be different
         assert aircraft.id not in self.ac_dict.keys(), 'aircraft id %d already in dict' % aircraft.id
         self.ac_dict[aircraft.id] = aircraft
 
+    # remove aircraft from dict
     def remove(self, aircraft):
         try:
             del self.ac_dict[aircraft.id]
         except KeyError:
             pass
 
+    # get aircraft by its id
     def get_aircraft_by_id(self, aircraft_id):
         return self.ac_dict[aircraft_id]
 
 
-class AircraftList:
-    def __init__(self):
-        self.ac_list = []
-        self.id_list = []
-
-    @property
-    def num_aircraft(self):
-        return len(self.ac_list)
-
-    def add(self, aircraft):
-        self.ac_list.append(aircraft)
-        self.id_list.append(aircraft.id)
-        assert len(self.ac_list) == len(self.id_list)
-
-        unique, count = np.unique(np.array(self.id_list), return_counts=True)
-        assert np.all(count < 2), 'ununique id added to list'
-
-    def remove(self, aircraft):
-        try:
-            self.ac_list.remove(aircraft)
-            self.id_list.remove(aircraft.id)
-            assert len(self.ac_list) == len(self.id_list)
-        except ValueError:
-            pass
-
-    def get_aircraft_by_id(self, aircraft_id):
-        index = np.where(np.array(self.id_list) == aircraft_id)[0]
-        assert index.shape[0] == 1, 'find multi aircraft with id %d' % aircraft_id
-        return self.ac_list[int(index)]
-
-        for aircraft in self.buffer_list:
-            if aircraft.id == aircraft_id:
-                return aircraft
+# class AircraftList:
+#     def __init__(self):
+#         self.ac_list = []
+#         self.id_list = []
+#
+#     @property
+#     def num_aircraft(self):
+#         return len(self.ac_list)
+#
+#     def add(self, aircraft):
+#         self.ac_list.append(aircraft)
+#         self.id_list.append(aircraft.id)
+#         assert len(self.ac_list) == len(self.id_list)
+#
+#         unique, count = np.unique(np.array(self.id_list), return_counts=True)
+#         assert np.all(count < 2), 'ununique id added to list'
+#
+#     def remove(self, aircraft):
+#         try:
+#             self.ac_list.remove(aircraft)
+#             self.id_list.remove(aircraft.id)
+#             assert len(self.ac_list) == len(self.id_list)
+#         except ValueError:
+#             pass
+#
+#     def get_aircraft_by_id(self, aircraft_id):
+#         index = np.where(np.array(self.id_list) == aircraft_id)[0]
+#         assert index.shape[0] == 1, 'find multi aircraft with id %d' % aircraft_id
+#         return self.ac_list[int(index)]
+#
+#         for aircraft in self.buffer_list:
+#             if aircraft.id == aircraft_id:
+#                 return aircraft
 
 
 class Goal:
@@ -396,11 +417,11 @@ class Aircraft:
         self.reward = 0
         self.goal = Goal(goal_pos)
         dx, dy = self.goal.position - self.position
-        self.heading = math.atan2(dy, dx)
+        self.heading = math.atan2(dy, dx)  # set its initial heading point to its goal
 
         self.load_config()
 
-        self.conflict_id_set = set()
+        self.conflict_id_set = set()  # store the id of all aircraft currently in conflict
 
     def load_config(self):
         self.G = Config.G
@@ -413,8 +434,8 @@ class Aircraft:
 
     def step(self, a=1):
         self.speed = max(self.min_speed, min(self.speed, self.max_speed))  # project to range
-        self.speed += np.random.normal(0, self.speed_sigma)
-        self.heading += (a - 1) * self.d_heading
+        self.speed += np.random.normal(0, self.speed_sigma)  # uncertainty
+        self.heading += (a - 1) * self.d_heading  # change heading
         vx = self.speed * math.cos(self.heading)
         vy = self.speed * math.sin(self.heading)
         self.velocity = np.array([vx, vy])
@@ -425,12 +446,13 @@ class Aircraft:
 class VertiPort:
     def __init__(self, id, position):
         self.id = id
-        self.position = np.array(position)
+        self.position = np.array(position)  # position of vertiport
         self.clock_counter = 0
         self.time_next_aircraft = np.random.uniform(0, 60)
 
     # when the next aircraft will take off
     def generate_interval(self):
+        # time interval to generate next aircraft
         self.time_next_aircraft = np.random.uniform(Config.time_interval_lower, Config.time_interval_upper)
         self.clock_counter = 0
 
