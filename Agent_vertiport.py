@@ -19,8 +19,6 @@ def run_experiment(env, render, save_path):
     while episode < Config.no_episodes:
         # at the beginning of each episode, set done to False, set time step in this episode to 0
         # set reward to 0, reset the environment
-        if render:
-            env.render()
         episode += 1
         done = False
         episode_time_step = 0
@@ -29,21 +27,25 @@ def run_experiment(env, render, save_path):
         action = np.ones(num_aircraft)
         info = None
         near_end = False
-        counter = 0 # avoid end episode initially
+        counter = 0  # avoid end episode initially
 
         while not done:
-            env.render()
+            if render:
+                env.render()
+            # make decision every 5 time steps
             if episode_time_step % 5 == 0:
 
                 time_before = int(round(time.time() * 1000))
                 num_existing_aircraft = last_observation.shape[0]
                 action = np.ones(num_existing_aircraft, dtype=np.int32)
                 action_by_id = {}
-                
+
+                # make decision for each aircraft one by one
                 for index in range(num_existing_aircraft):
                     state = MultiAircraftState(state=last_observation, index=index, init_action=action)
                     root = MultiAircraftNode(state=state)
                     mcts = MCTS(root)
+                    # if aircraft if close to another aircraft, build a larger tree, else build smaller tree
                     if info[index] < 3 * Config.minimum_separation:
                         best_node = mcts.best_action(Config.no_simulations, Config.search_depth)
                     else:
@@ -63,7 +65,8 @@ def run_experiment(env, render, save_path):
             episode_time_step += 1
 
             if episode_time_step % 100 == 0:
-                print('========================== Time Step: %d =============================' % episode_time_step, file=text_file)
+                print('========================== Time Step: %d =============================' % episode_time_step,
+                      file=text_file)
                 print('Number of conflicts:', env.conflicts / 2, file=text_file)
                 print('Total Aircraft Genrated:', env.id_tracker, file=text_file)
                 print('Goal Aircraft:', env.goals, file=text_file)
@@ -73,10 +76,10 @@ def run_experiment(env, render, save_path):
             if env.id_tracker >= 10000:
                 counter += 1
                 near_end = True
-            
+
             if counter > 0:
                 done = num_existing_aircraft == 0
-            
+
         print('========================== End =============================', file=text_file)
         print('========================== End =============================')
         print('Number of conflicts:', env.conflicts / 2)
@@ -86,7 +89,7 @@ def run_experiment(env, render, save_path):
         print('Current Aircraft Enroute:', env.aircraft_dict.num_aircraft)
         for key, item in time_dict.items():
             print('%d aircraft: %.2f' % (key, np.mean(item)))
-            
+
         # print training information for each training episode
         epi_returns.append(info)
         conflicts_list.append(env.conflicts)
@@ -102,7 +105,8 @@ def run_experiment(env, render, save_path):
     print('Time:', sum(flat_list) / float(len(flat_list)))
     print('NMAC prob:', epi_returns.count('n') / Config.no_episodes)
     print('Goal prob:', epi_returns.count('g') / Config.no_episodes)
-    print('Average Conflicts per episode:', sum(conflicts_list) / float(len(conflicts_list)) / 2) # / 2 to ignore duplication
+    print('Average Conflicts per episode:',
+          sum(conflicts_list) / float(len(conflicts_list)) / 2)  # / 2 to ignore duplication
     env.close()
     text_file.close()
 
