@@ -8,8 +8,8 @@ from nodes_multi import MultiAircraftNode, MultiAircraftState
 from search_multi import MCTS
 
 
-def run_experiment(env, save_path):
-    text_file = open(save_path, "w") # save all non-terminal print statements in a txt file
+def run_experiment(env, render, save_path):
+    text_file = open(save_path, "w")  # save all non-terminal print statements in a txt file
     episode = 0
     epi_returns = []
     conflicts_list = []
@@ -19,6 +19,8 @@ def run_experiment(env, save_path):
     while episode < Config.no_episodes:
         # at the beginning of each episode, set done to False, set time step in this episode to 0
         # set reward to 0, reset the environment
+        if render:
+            env.render()
         episode += 1
         done = False
         episode_time_step = 0
@@ -71,7 +73,6 @@ def run_experiment(env, save_path):
             if env.id_tracker >= 10000:
                 counter += 1
                 near_end = True
-                
             
             if counter > 0:
                 done = num_existing_aircraft == 0
@@ -96,11 +97,11 @@ def run_experiment(env, save_path):
     flat_list = [item for sublist in time_list for item in sublist]
     print('----------------------------------------')
     print('Number of aircraft:', Config.num_aircraft)
-    print('Search depth:', search_depth)
-    print('Simulations:', no_simulations)
+    print('Search depth:', Config.search_depth)
+    print('Simulations:', Config.no_simulations)
     print('Time:', sum(flat_list) / float(len(flat_list)))
-    print('NMAC prob:', epi_returns.count('n') / no_episodes)
-    print('Goal prob:', epi_returns.count('g') / no_episodes)
+    print('NMAC prob:', epi_returns.count('n') / Config.no_episodes)
+    print('Goal prob:', epi_returns.count('g') / Config.no_episodes)
     print('Average Conflicts per episode:', sum(conflicts_list) / float(len(conflicts_list)) / 2) # / 2 to ignore duplication
     env.close()
     text_file.close()
@@ -108,12 +109,18 @@ def run_experiment(env, save_path):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--seed', '-r', type=int, default=2)
-    parser.add_argument('--save_path', '-p', type=str, default='output/result.txt')
+    parser.add_argument('--seed', type=int, default=2)
+    parser.add_argument('--save_path', '-p', type=str, default='output/seed2.txt')
+    parser.add_argument('--render', '-r', action='store_true')
     args = parser.parse_args()
 
+    import random
+    np.set_printoptions(suppress=True)
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+
     env = MultiAircraftEnv(args.seed)
-    run_experiment(env, args.save_path)
+    run_experiment(env, args.render, args.save_path)
 
 
 if __name__ == '__main__':
