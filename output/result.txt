@@ -1,0 +1,78 @@
+========================== Time Step: 100 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 8
+Goal Aircraft: 0
+NMACs: 0
+Current Aircraft Enroute: 8
+========================== Time Step: 200 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 14
+Goal Aircraft: 0
+NMACs: 0
+Current Aircraft Enroute: 14
+========================== Time Step: 300 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 20
+Goal Aircraft: 0
+NMACs: 0
+Current Aircraft Enroute: 20
+========================== Time Step: 400 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 26
+Goal Aircraft: 3
+NMACs: 0
+Current Aircraft Enroute: 23
+========================== Time Step: 500 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 31
+Goal Aircraft: 6
+NMACs: 0
+Current Aircraft Enroute: 25
+========================== Time Step: 600 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 36
+Goal Aircraft: 16
+NMACs: 0
+Current Aircraft Enroute: 20
+========================== Time Step: 700 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 41
+Goal Aircraft: 21
+NMACs: 0
+Current Aircraft Enroute: 20
+========================== Time Step: 800 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 45
+Goal Aircraft: 27
+NMACs: 0
+Current Aircraft Enroute: 18
+========================== Time Step: 900 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 52
+Goal Aircraft: 32
+NMACs: 0
+Current Aircraft Enroute: 20
+========================== Time Step: 1000 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 57
+Goal Aircraft: 39
+NMACs: 0
+Current Aircraft Enroute: 18
+========================== Time Step: 1100 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 64
+Goal Aircraft: 42
+NMACs: 0
+Current Aircraft Enroute: 22
+========================== Time Step: 1200 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 69
+Goal Aircraft: 46
+NMACs: 0
+Current Aircraft Enroute: 23
+========================== Time Step: 1300 =============================
+Number of conflicts: 0.0
+Total Aircraft Genrated: 76
+Goal Aircraft: 55
+NMACs: 0
+Current Aircraft Enroute: 21
