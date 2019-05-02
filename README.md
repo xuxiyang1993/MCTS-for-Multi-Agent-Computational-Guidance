@@ -10,6 +10,7 @@ A short video demo of this algorithm: https://www.youtube.com/watch?v=Q6AkCCt-9n
 * numpy
 * gym
 * collections
+* ...
 
 
 ## Getting Started
@@ -19,6 +20,14 @@ Make sure that you have the above requirements taken care of, then download all 
 ```
 python Agent_vertiport.py
 ```
+
+Optional arguments:
+
+`--save_path` the path where you want to save the output
+
+`--seed` seed of the experiment
+
+`--render` if render the env while running exp
 
 
 If you have any questions or comments, don't hesitate to send me an email! I am looking for ways to make this code even more computationally efficient.
