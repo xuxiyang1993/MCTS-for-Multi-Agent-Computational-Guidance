@@ -31,7 +31,7 @@ Optional arguments:
 
 
 ## MCTS Algorithm
-The whole MCTS algorithm files are under the directory `MCTS\`
+The following codes are related to MCTS algorithm
 
 `common.py` defines the general MCTS node class and state class
 
@@ -40,11 +40,9 @@ The whole MCTS algorithm files are under the directory `MCTS\`
 `search_multi.py` describes the search process of MCTS algorithm
 
 ## Simulator
-The simulator codes are under `Simulators\`
+The simulator code is `MultiAircraftVertiportEnv.py`. The following described the main function in this simulator.
 
 `config_vertiport.py` defines the configurable parameters of the simulator. For example, airspace width/length, number of aircraft, scale (1 pixel = how many meters), conflict/NMAC distance, cruise/max speed of aircraft, heading angle change rate of aircraft, number simulations and search depth of MCTS algorithm, vertiport location, ...
-
-`MultiAircraftVertiportEnv.py` is the main simulator. Some main functions include:
 
 * `__init__()` initilize the simulator by generating vertiports, centralized controller, loading configuration parameters, generating aircraft.
 
@@ -52,14 +50,13 @@ The simulator codes are under `Simulators\`
 
 * `_get_ob()` will return the current state, which is n by 8 matrix, where n is the number of aircraft. Each aircraft has (x, y, vx, vy, speed, heading, gx, gy) state information.
 
-* `_get_normalized_ob()` will return the normalized current state, which will potential be useful if we want to feed state into a neural network.
+* `_get_normalized_ob()` will normalized the state to be in range [0, 1], which will be useful if we want to feed state into a neural network.
 
 * `step()` will return next state, reward, terminal, info given current state and current action. Each aircraft will fly according the given action. We have a clock at each vertiport to decide whether to generate new flight request/aircraft.
 
 * `_terminal_reward()` will return the reward function for current state. This function will check if there is any conflict/NMAC between any two aircraft and update conflict/NMAC number. It will also remove aircraft that reaches goal position and aircraft pair that has NMAC.
 
 * `render()` will visualize all of the current aircraft and vertiport. I used this to generate the demo video.
-
 
 
 If you have any questions or comments, don't hesitate to send me an email! I am looking for ways to make this code even more computationally efficient.
