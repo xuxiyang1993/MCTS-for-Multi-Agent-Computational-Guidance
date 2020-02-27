@@ -2,6 +2,8 @@
 
 A Python implementation of the algorithm proposed in paper "Multi Agent Autonomous On-Demand Free Flight Operations in Urban Air Mobility using Monte Carlo Tree Search"
 
+https://www.researchgate.net/publication/333807443_Multi-Agent_Autonomous_On-Demand_Free_Flight_Operations_in_Urban_Air_Mobility
+
 A short video demo of this algorithm: https://www.youtube.com/watch?v=Q6AkCCt-9nI&t=
 
 ## Requirements
