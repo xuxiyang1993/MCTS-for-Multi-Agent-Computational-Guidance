@@ -1,3 +1,8 @@
+**Status:** Archive (code is provided as-is, no updates expected)
+
+## Note
+This repo is **DEPRECATED**, please check the this [project](https://github.com/xuxiyang1993/Multi_MCTS_Guidance_Separation_Assurance) for journal version paper.
+
 # Multi Agent Autonomous On-Demand Free Flight Operations in Urban Air Mobility using Monte Carlo Tree Search
 
 A Python implementation of the algorithm proposed in paper "Multi Agent Autonomous On-Demand Free Flight Operations in Urban Air Mobility using Monte Carlo Tree Search"
